@@ -8,20 +8,20 @@ def investing(
     target: CharityDonationBase,
     sources: List[CharityDonationBase],
 ) -> List[CharityDonationBase]:
-    results = []
+    modified = []
     for source in sources:
         fund_selection = min(
             target.full_amount - (target.invested_amount or 0),
             source.full_amount - (source.invested_amount or 0),
         )
-        for entity in source, target:
-            entity.invested_amount = (
-                entity.invested_amount or 0
+        for donation in source, target:
+            donation.invested_amount = (
+                donation.invested_amount or 0
             ) + fund_selection
-            if entity.full_amount == entity.invested_amount:
-                entity.fully_invested = True
-                entity.close_date = datetime.now()
-        results.append(source)
+            if donation.full_amount == donation.invested_amount:
+                donation.fully_invested = True
+                donation.close_date = datetime.now()
+        modified.append(source)
         if target.fully_invested:
             break
-    return results
+    return modified
