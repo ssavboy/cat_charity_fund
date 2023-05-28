@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends
@@ -7,10 +8,11 @@ from app.api.validators import check_charity_project_edit, check_name_duplicate
 from app.core.db import get_async_session
 from app.core.user import current_superuser
 from app.crud.charity_project import charity_project_crud
+from app.crud.donation import donation_crud
 from app.schemas.charity_project import (CharityProjectCreate,
                                          CharityProjectDB,
                                          CharityProjectUpdate)
-from app.sevices.investing import donation_or_close, investing
+from app.sevices.investing import investing
 
 router = APIRouter()
 
@@ -37,8 +39,16 @@ async def create_charity_project(
     session: AsyncSession = Depends(get_async_session)
 ):
     await check_name_duplicate(charity_project.name, session)
-    new_project = await charity_project_crud.create(charity_project, session)
-    await investing(session)
+    new_project = await charity_project_crud.create(
+        obj_in=charity_project, session=session, flag=False
+    )
+    session.add_all(
+        investing(
+            target=new_project,
+            sources=await donation_crud.get_unclosed(session=session)
+        )
+    )
+    await session.commit()
     await session.refresh(new_project)
     return new_project
 
@@ -63,7 +73,9 @@ async def update_charity_project(
         await check_name_duplicate(obj_in.name, session)
     if full_amount == existing_project.invested_amount:
         existing_project.full_amount = full_amount
-        donation_or_close(existing_project)
+        existing_project.invested_amount = existing_project.full_amount
+        existing_project.fully_invested = True
+        existing_project.close_date = datetime.now()
     return await charity_project_crud.update(
         existing_project, obj_in, session
     )

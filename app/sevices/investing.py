@@ -1,49 +1,27 @@
 from datetime import datetime
+from typing import List
 
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.models import CharityProject, Donation
+from app.models.base import CharityDonationBase
 
 
-def donation_or_close(obj):
-    obj.invested_amount = obj.full_amount
-    obj.fully_invested = True
-    obj.close_date = datetime.now()
-
-
-async def investing(
-    session: AsyncSession
-):
-    projects = await session.execute(
-        select(CharityProject).where(
-            ~CharityProject.fully_invested
-        ).order_by(CharityProject.create_date)
-    )
-    for project in projects.scalars().all():
-        donations = await session.execute(
-            select(Donation).where(
-                ~Donation.fully_invested
-            ).order_by(Donation.create_date)
+def investing(
+    target: CharityDonationBase,
+    sources: List[CharityDonationBase],
+) -> List[CharityDonationBase]:
+    results = []
+    for source in sources:
+        fund_selection = min(
+            target.full_amount - (target.invested_amount or 0),
+            source.full_amount - (source.invested_amount or 0),
         )
-        for donation in donations.scalars().all():
-            project_amount = (
-                project.full_amount - project.invested_amount
-            )
-            donation_amount = (
-                donation.full_amount - donation.invested_amount
-            )
-            if project_amount > donation_amount:
-                project.invested_amount += donation_amount
-                donation_or_close(donation)
-            elif project_amount < donation_amount:
-                donation.invested_amount += project_amount
-                donation_or_close(project)
-            else:
-                donation_or_close(project)
-                donation_or_close(donation)
-            session.add(project)
-            session.add(donation)
-            if project.fully_invested:
-                break
-    await session.commit()
+        for entity in source, target:
+            entity.invested_amount = (
+                entity.invested_amount or 0
+            ) + fund_selection
+            if entity.full_amount == entity.invested_amount:
+                entity.fully_invested = True
+                entity.close_date = datetime.now()
+        results.append(source)
+        if target.fully_invested:
+            break
+    return results

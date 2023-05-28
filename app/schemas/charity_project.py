@@ -5,11 +5,12 @@ from pydantic import BaseModel, Extra, Field
 
 
 class CharityProjectBase(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    name: Optional[str] = Field(None, max_length=100)
     description: Optional[str] = Field(None, min_length=1)
     full_amount: Optional[int] = Field(None, gt=0)
 
     class Config:
+        min_anystr_length = 1
         extra = Extra.forbid
 
 
