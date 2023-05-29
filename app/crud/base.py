@@ -33,14 +33,14 @@ class CRUDBase:
             obj_in,
             session: AsyncSession,
             user: Optional[User] = None,
-            flag: bool = True
+            approved_commit: bool = True
     ):
         obj_in_data = obj_in.dict()
         if user is not None:
             obj_in_data['user_id'] = user.id
         db_obj = self.model(**obj_in_data)
         session.add(db_obj)
-        if flag:
+        if approved_commit:
             await session.commit()
             await session.refresh(db_obj)
         return db_obj

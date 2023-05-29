@@ -40,7 +40,7 @@ async def create_charity_project(
 ):
     await check_name_duplicate(charity_project.name, session)
     new_project = await charity_project_crud.create(
-        obj_in=charity_project, session=session, flag=False
+        obj_in=charity_project, session=session, approved_commit=False
     )
     session.add_all(
         investing(

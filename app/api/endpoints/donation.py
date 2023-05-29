@@ -39,7 +39,7 @@ async def create_donation(
     user: User = Depends(current_user)
 ):
     donation = await donation_crud.create(
-        obj_in=donation, session=session, user=user, flag=False
+        obj_in=donation, session=session, user=user, approved_commit=False
     )
     session.add_all(
         investing(

@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, Text
 
 from .base import CharityDonationBase
 
-TEMPLATE_REPR = '{name} {description}'
+TEMPLATE_REPR = '{name:.15} {description:.15} {base}'
 
 
 class CharityProject(CharityDonationBase):
@@ -10,7 +10,8 @@ class CharityProject(CharityDonationBase):
     description = Column(Text, nullable=False)
 
     def __repr__(self):
-        template = TEMPLATE_REPR.format(
-            name=self.name, description=self.description
+        return TEMPLATE_REPR.format(
+            name=self.name,
+            description=self.description,
+            base=super().__repr__()
         )
-        return f'{super().__repr__()} {template}'

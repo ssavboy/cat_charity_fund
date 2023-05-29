@@ -2,7 +2,7 @@ from sqlalchemy import Column, ForeignKey, Integer, Text
 
 from .base import CharityDonationBase
 
-TEMPLATE_REPR = '{user} {comment}'
+TEMPLATE_REPR = '{user} {comment} {base}'
 
 
 class Donation(CharityDonationBase):
@@ -10,7 +10,8 @@ class Donation(CharityDonationBase):
     comment = Column(Text)
 
     def __repr__(self):
-        template = TEMPLATE_REPR.format(
-            user=self.user_id, comment=self.comment
+        return TEMPLATE_REPR.format(
+            user=self.user_id,
+            comment=self.comment,
+            base=super().__repr__()
         )
-        return f'{super().__repr__()} {template}'
